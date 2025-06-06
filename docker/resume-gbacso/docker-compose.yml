@@ -1,0 +1,25 @@
+name: resume-gbacso
+services:
+  resume-gbacso:
+    image: gaeba95/resume-gbacso:latest # or 'build: .' if building locally
+    labels:
+      traefik.docker.network: traefik-public
+      traefik.enable: "true"
+      traefik.http.routers.resume-gbacso-http.entrypoints: http
+      traefik.http.routers.resume-gbacso-http.middlewares: https-redirect
+      traefik.http.routers.resume-gbacso-http.rule: Host(`bacso.ch`) || Host(`www.bacso.ch`)
+      traefik.http.routers.resume-gbacso-http.service: resume-gbacso
+      traefik.http.routers.resume-gbacso-https.entrypoints: https
+      traefik.http.routers.resume-gbacso-https.rule: Host(`bacso.ch`) || Host(`www.bacso.ch`)
+      traefik.http.routers.resume-gbacso-https.service: resume-gbacso
+      traefik.http.routers.resume-gbacso-https.tls: "true"
+      traefik.http.routers.resume-gbacso-https.tls.certresolver: le
+      traefik.http.services.resume-gbacso.loadbalancer.server.port: "80"
+    restart: unless-stopped
+    networks:
+      traefik-public: null
+
+networks:
+  traefik-public:
+    name: traefik-public
+    external: true
