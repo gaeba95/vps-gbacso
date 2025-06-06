@@ -28,7 +28,7 @@ All services are orchestrated via Docker Compose, with easy configuration and de
 1. **Clone the repository:**
 
    ```sh
-   git clone --recurse-submodules https://github.com/yourusername/vps-gbacso.git
+   git clone --recurse-submodules https://github.com/gaeba95/vps-gbacso.git
    cd vps-gbacso
    ```
 
@@ -68,15 +68,15 @@ cd docker
 
 ```sh
 ./start_containers.sh --mariadb-password mypass --frappe-password adminpass \
-  --letsencrypt-email user@example.com --sites erpnext.bacso.ch \
-  --docker-account gaeba95 --image-name customappfrappe --image-tag latest
+  --letsencrypt-email user@example.com --sites site.example.com \
+  --docker-account yourdockeraccount --image-name customappfrappe --image-tag latest
 ```
 
 ### Build Custom ERPNext Image
 
 ```sh
 cd docker/erpnext
-./builds_apps_docker_image.sh --docker-account gaeba95 --image-name customappfrappe --image-tag latest
+./builds_apps_docker_image.sh --docker-account yourdockeraccount --image-name customappfrappe --image-tag latest
 ```
 
 ---
@@ -162,7 +162,7 @@ cd docker
 
 ```sh
 cd docker/erpnext
-./deploy_erpnext.sh --mariadb-password mypass --frappe-password adminpass --letsencrypt-email user@example.com --sites erpnext.bacso.ch
+./deploy_erpnext.sh --mariadb-password mypass --frappe-password adminpass --letsencrypt-email user@example.com --sites site.example.com
 ```
 
 ---
