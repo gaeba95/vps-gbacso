@@ -1,0 +1,47 @@
+
+name: wordpress
+services:
+  wordpress:
+    image: wordpress:latest
+    environment:
+      - WORDPRESS_DB_HOST=mysql
+      - WORDPRESS_DB_USER=wpuser
+      - WORDPRESS_DB_PASSWORD=-xxxxxxxx
+      - WORDPRESS_DB_NAME=wpdb
+    depends_on:
+      - mysql
+    labels:
+      traefik.docker.network: traefik-public
+      traefik.enable: "true"
+      traefik.http.routers.wordpress-http.entrypoints: http
+      traefik.http.routers.wordpress-http.middlewares: https-redirect
+      traefik.http.routers.wordpress-http.rule: Host(`wordpress.bacso.ch`)
+      traefik.http.routers.wordpress-http.service: wordpress
+      traefik.http.routers.wordpress-https.entrypoints: https
+      traefik.http.routers.wordpress-https.rule: Host(`wordpress.bacso.ch`)
+      traefik.http.routers.wordpress-https.service: wordpress
+      traefik.http.routers.wordpress-https.tls: "true"
+      traefik.http.routers.wordpress-https.tls.certresolver: le
+      traefik.http.services.wordpress.loadbalancer.server.port: "80"
+    networks:
+      traefik-public: null
+
+  mysql:
+    image: mariadb:10.11
+    environment:
+      - MYSQL_ROOT_PASSWORD=xxxxxxxx
+      - MYSQL_DATABASE=wpdb
+      - MYSQL_USER=wpuser
+      - MYSQL_PASSWORD=-xxxxxxxx
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - traefik-public
+
+networks:
+  traefik-public:
+    name: traefik-public
+    external: true
+
+volumes:
+  mysql_data:

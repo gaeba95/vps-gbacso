@@ -1,0 +1,31 @@
+name: portainer
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    restart: always
+    volumes:
+      - portainer_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      traefik.docker.network: traefik-public
+      traefik.enable: "true"
+      traefik.http.routers.portainer-http.entrypoints: http
+      traefik.http.routers.portainer-http.middlewares: https-redirect
+      traefik.http.routers.portainer-http.rule: Host(`portainer.bacso.ch`)
+      traefik.http.routers.portainer-http.service: portainer
+      traefik.http.routers.portainer-https.entrypoints: https
+      traefik.http.routers.portainer-https.rule: Host(`portainer.bacso.ch`)
+      traefik.http.routers.portainer-https.service: portainer
+      traefik.http.routers.portainer-https.tls: "true"
+      traefik.http.routers.portainer-https.tls.certresolver: le
+      traefik.http.services.portainer.loadbalancer.server.port: "9000"
+    networks:
+      traefik-public: null
+
+volumes:
+  portainer_data:
+
+networks:
+  traefik-public:
+    name: traefik-public
+    external: true

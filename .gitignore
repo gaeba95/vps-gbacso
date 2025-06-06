@@ -1,0 +1,21 @@
+# macOS specific files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Icon must end with two \r
+Icon
+
+# Thumbnails
+._*
+
+# macOS folder attributes
+.DS_Store?
+.Spotlight-V100
+.Trashes
+.VolumeIcon.icns
+
+# macOS system files
+.fseventsd
+.TemporaryItems
+.apdisk
