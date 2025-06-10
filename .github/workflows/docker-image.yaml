@@ -28,7 +28,7 @@ jobs:
               id: encode-apps-json
               run: |
                 APPS_JSON=$(cat docker/erpnext/apps.json)
-                APPS_JSON_BASE64=$(echo -n "$APPS_JSON" | base64)
+                APPS_JSON_BASE64=$(echo -n "$APPS_JSON" | base64 -w 0)
                 echo "base64=$APPS_JSON_BASE64" >> $GITHUB_OUTPUT
                 
             - name: Log in to Docker Hub
