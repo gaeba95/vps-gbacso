@@ -21,3 +21,6 @@ Icon
 .apdisk
 
 traefik/traefik.env
+
+# ggshield secrets scan cache
+.ggshield/
