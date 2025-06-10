@@ -27,6 +27,11 @@
 set -euo pipefail  # Exit on error, unset variable, or failed pipe
 
 # Default values for variables
+TRAEFIK_DOMAIN="example.com"
+TRAEFIK_WILDCARD_DOMAIN="*.example.com"
+TRAEFIK_EMAIL=""
+TRAEFIK_HASHED_PASSWORD=""
+CF_DNS_API_TOKEN=""
 MARIA_DB_ROOT_PASSWORD=""
 FRAPPE_ADMIN_PASSWORD=""
 LETSENCRYPT_EMAIL=""
@@ -73,6 +78,26 @@ while [[ $# -gt 0 ]]; do
             IMAGE_TAG="$2"               # Set Docker image tag
             shift 2
             ;;
+        --traefik-domain)
+            TRAEFIK_DOMAIN="$2"          # Set Traefik domain
+            shift 2
+            ;;
+        --traefik-wildcard-domain)
+            TRAEFIK_WILDCARD_DOMAIN="$2" # Set Traefik wildcard domain
+            shift 2
+            ;;
+        --traefik-email)
+            TRAEFIK_EMAIL="$2"           # Set Traefik email
+            shift 2
+            ;;
+        --traefik-hashed-password)
+            TRAEFIK_HASHED_PASSWORD="$2" # Set Traefik hashed password
+            shift 2
+            ;;
+        --cf-dns-api-token)
+            CF_DNS_API_TOKEN="$2"        # Set Cloudflare DNS API token
+            shift 2
+            ;;
         *)
             break
             ;;
@@ -91,6 +116,9 @@ fi
 if [[ -z "$LETSENCRYPT_EMAIL" ]]; then
     read -p "Enter Let's Encrypt email: " LETSENCRYPT_EMAIL
 fi
+if [[ -z "$SITES" ]]; then
+    read -p "Enter comma-separated ERPNext sites to create: " SITES
+fi
 if [[ -z "$DOCKER_ACCOUNT" ]]; then
     read -p "Enter Docker account name: " DOCKER_ACCOUNT
 fi
@@ -100,6 +128,21 @@ fi
 if [[ -z "$IMAGE_TAG" ]]; then
     read -p "Enter Docker image tag for ERPNext: " IMAGE_TAG
 fi
+if [[ -z "$TRAEFIK_DOMAIN" ]]; then
+    read -p "Enter Traefik domain: " TRAEFIK_DOMAIN
+fi
+if [[ -z "$TRAEFIK_WILDCARD_DOMAIN" ]]; then
+    read -p "Enter Traefik wildcard domain: " TRAEFIK_WILDCARD_DOMAIN
+fi
+if [[ -z "$TRAEFIK_EMAIL" ]]; then
+    read -p "Enter Traefik email: " TRAEFIK_EMAIL
+fi
+if [[ -z "$TRAEFIK_HASHED_PASSWORD" ]]; then
+    read -p "Enter Traefik hashed password: " TRAEFIK_HASHED_PASSWORD
+fi
+if [[ -z "$CF_DNS_API_TOKEN" ]]; then
+    read -p "Enter Cloudflare DNS API token: " CF_DNS_API_TOKEN
+fi
 
 # Ensure all ERPNext and Traefik scripts are executable
 chmod +x erpnext/*.sh
@@ -107,7 +150,12 @@ chmod +x traefik/*.sh
 
 # Start Traefik reverse proxy with the appropriate configuration
 cd ./traefik
-bash deploy_traefik.sh --lan="$IS_LAN"  # Pass LAN mode as argument
+bash deploy_traefik.sh --lan="$IS_LAN" \
+                       --domain "$TRAEFIK_DOMAIN" \
+                       --wildcard-domain "$TRAEFIK_WILDCARD_DOMAIN" \
+                       --email "$TRAEFIK_EMAIL" \
+                       --hashed-password "$TRAEFIK_HASHED_PASSWORD" \
+                       --cf-dns-api-token "$CF_DNS_API_TOKEN"
 
 cd ..
 

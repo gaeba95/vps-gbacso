@@ -19,3 +19,5 @@ Icon
 .fseventsd
 .TemporaryItems
 .apdisk
+
+traefik/traefik.env
