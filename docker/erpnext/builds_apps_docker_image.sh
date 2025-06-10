@@ -47,36 +47,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Define a JSON array of app repositories and branches to include in the build
-export APPS_JSON='[
-  {
-    "url": "https://github.com/frappe/erpnext",
-    "branch": "version-15"
-  },
-  {
-    "url": "https://github.com/frappe/hrms",
-    "branch": "version-15"
-  },
-  {
-    "url": "https://github.com/frappe/payments",
-    "branch": "version-15"
-  },
-  {
-    "url": "https://github.com/frappe/crm",
-    "branch": "v1.46.2"
-  },
-  {
-    "url": "https://github.com/frappe/insights",
-    "branch": "version-3"
-  },
-  {
-    "url": "https://github.com/frappe/print_designer",
-    "branch": "v1.5.2"
-  },
-  {
-    "url": "https://github.com/frappe/builder",
-    "branch": "v1.17.0"
-  }
-]'
+export APPS_JSON=$(cat apps.json)
 
 # Convert the JSON array to a base64 encoded string for use in the Docker build
 export APPS_JSON_BASE64=$(echo ${APPS_JSON} | base64 -w 0)

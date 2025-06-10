@@ -1,0 +1,76 @@
+name: Build and Push frappe_docker Image
+
+on:
+    push:
+        paths:
+            - 'docker/erpnext/apps.json'
+
+jobs:
+    build-and-push:
+        runs-on: ubuntu-latest
+        name: Build and Push Docker Frappe Image
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+
+            - name: Cache Docker layers
+              uses: actions/cache@v4
+              with:
+                path: /tmp/.buildx-cache
+                key: ${{ runner.os }}-buildx-${{ github.sha }}
+                restore-keys: ${{ runner.os }}-buildx-
+
+            - name: Encode apps.json to Base64
+              id: encode-apps-json
+              run: |
+                APPS_JSON=$(cat docker/erpnext/apps.json)
+                APPS_JSON_BASE64=$(echo -n "$APPS_JSON" | base64)
+                echo "base64=$APPS_JSON_BASE64" >> $GITHUB_OUTPUT
+                
+            - name: Log in to Docker Hub
+              uses: docker/login-action@v3
+              with:
+                username: ${{ secrets.DOCKER_USERNAME }}
+                password: ${{ secrets.DOCKER_TOKEN }}
+
+            - name: Build and push frappe_docker image
+              uses: docker/build-push-action@v5
+              with:
+                context: ./docker/erpnext/frappe_docker
+                file: ./docker/erpnext/frappe_docker/images/layered/Containerfile
+                push: true
+                platforms: linux/amd64,linux/arm64
+                build-args: |
+                    FRAPPE_PATH=https://github.com/frappe/frappe
+                    FRAPPE_BRANCH=version-15
+                    APPS_JSON_BASE64=${{ steps.encode-apps-json.outputs.base64 }}
+                tags: |
+                    ${{ secrets.DOCKER_USERNAME }}/f${{ secrets.DOCKER_REPO }}:latest
+                    ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }}:${{ steps.meta.outputs.SHORT_SHA }}
+                cache-from: type=local,src=/tmp/.buildx-cache
+                cache-to: type=local,dest=/tmp/.buildx-cache,mode=max
+
+            - name: output image digest
+              id: meta
+              run: echo "SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
+            - name: Notify on success or failure
+              if: always()
+              run: |
+                if [ ${{ job.status }} == 'success' ]; then
+                echo "Docker image built and pushed successfully with digest: ${{ steps.meta.outputs.SHORT_SHA }}"
+                else
+                echo "Docker image build or push failed."
+                fi
+
+            - name: Clean up Docker Buildx cache
+              run: |
+                docker builder prune --all --force
+                rm -rf /tmp/.buildx-cache
+
+
+
