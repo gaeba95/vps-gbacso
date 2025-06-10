@@ -9,24 +9,47 @@
 #   ./start_containers.sh [OPTIONS]
 #
 # Arguments:
-#   --mariadb-password    Set MariaDB root password
-#   --frappe-password     Set Frappe admin password
-#   --letsencrypt-email   Set email for Let's Encrypt
-#   --sites               Comma-separated list of ERPNext sites to create
-#   --lan                 Enable LAN mode (uses erpnext-one-lan compose file)
-#   --docker-account      Docker Hub account name for images
-#   --image-name          Docker image name for ERPNext
-#   --image-tag           Docker image tag for ERPNext
+#   --mariadb-password <password>          Set MariaDB root password
+#   --frappe-password <password>           Set Frappe admin password
+#   --letsencrypt-email <email>            Set email for Let's Encrypt
+#   --sites <sites>                        Comma-separated list of ERPNext sites to create
+#   --lan                                  Enable LAN mode (uses erpnext-one-lan compose file)
+#   --docker-account <account>             Docker Hub account name for images
+#   --image-name <name>                    Docker image name for ERPNext
+#   --image-tag <tag>                      Docker image tag for ERPNext
+#   --traefik-domain <domain>              Traefik domain
+#   --traefik-wildcard-domain <domain>     Traefik wildcard domain
+#   --traefik-email <email>                Traefik email
+#   --traefik-hashed-password <password>   Traefik hashed password
+#   --cf-dns-api-token <token>             Cloudflare DNS API token
+#   --wp-db-root-password <password>       WordPress DB root password
+#   --wp-db-password <password>            WordPress DB user password
+#   --help, -h                             Show this help message
 #
 # Example:
-#   ./start_containers.sh --mariadb-password mypass --frappe-password adminpass \
-#     --letsencrypt-email user@example.com --sites site1.com,site2.com --lan \
-#     --docker-account mydockeruser --image-name myerpnext --image-tag v1.0.0
+#   ./start_containers.sh \
+#     --mariadb-password mypass \
+#     --frappe-password adminpass \
+#     --letsencrypt-email user@example.com \
+#     --sites site1.com,site2.com \
+#     --lan \
+#     --docker-account mydockeruser \
+#     --image-name myerpnext \
+#     --image-tag v1.0.0 \
+#     --traefik-domain example.com \
+#     --traefik-wildcard-domain '*.example.com' \
+#     --traefik-email admin@example.com \
+#     --traefik-hashed-password 'user:$$apr1$$...' \
+#     --cf-dns-api-token xxxxxxxx \
+#     --wp-db-root-password wp_root_pass \
+#     --wp-db-password wp_user_pass
 # -----------------------------------------------------------------------------
 
 set -euo pipefail  # Exit on error, unset variable, or failed pipe
 
 # Default values for variables
+MYSQL_ROOT_PASSWORD=""
+WORDPRESS_DB_PASSWORD=""
 TRAEFIK_DOMAIN="example.com"
 TRAEFIK_WILDCARD_DOMAIN="*.example.com"
 TRAEFIK_EMAIL=""
@@ -98,8 +121,39 @@ while [[ $# -gt 0 ]]; do
             CF_DNS_API_TOKEN="$2"        # Set Cloudflare DNS API token
             shift 2
             ;;
+        --wp-db-root-password)
+            MYSQL_ROOT_PASSWORD="$2"     # Set WordPress DB root password
+            shift 2
+            ;;
+        --wp-db-password)
+            WORDPRESS_DB_PASSWORD="$2"   # Set WordPress DB user password
+            shift 2
+            ;;
+        --help|-h)
+            echo "Usage: $0 [OPTIONS]"
+            echo "Options:"
+            echo "  --mariadb-password <password>    Set MariaDB root password"
+            echo "  --frappe-password <password>     Set Frappe admin password"
+            echo "  --letsencrypt-email <email>      Set email for Let's Encrypt"
+            echo "  --sites <sites>                   Comma-separated list of ERPNext sites to create"
+            echo "  --lan                             Enable LAN mode (uses erpnext-one-lan compose file)"
+            echo "  --docker-account <account>        Docker Hub account name for images"
+            echo "  --image-name <name>               Docker image name for ERPNext"
+            echo "  --image-tag <tag>                 Docker image tag for ERPNext"
+            echo "  --traefik-domain <domain>         Traefik domain"
+            echo "  --traefik-wildcard-domain <domain> Traefik wildcard domain"
+            echo "  --traefik-email <email>           Traefik email"
+            echo "  --traefik-hashed-password <password> Traefik hashed password"
+            echo "  --cf-dns-api-token <token>        Cloudflare DNS API token"
+            echo "  --wp-db-root-password <password>  WordPress DB root password"
+            echo "  --wp-db-password <password>       WordPress DB user password"
+            echo "  --help, -h                        Show this help message"
+            exit 0
+            ;;
         *)
-            break
+            echo "Unknown option: $1"
+            echo "Use --help for usage information."
+            exit 1
             ;;
     esac
 done
@@ -143,6 +197,14 @@ fi
 if [[ -z "$CF_DNS_API_TOKEN" ]]; then
     read -p "Enter Cloudflare DNS API token: " CF_DNS_API_TOKEN
 fi
+if [[ -z "$MYSQL_ROOT_PASSWORD" ]]; then
+    read -s -p "Enter WordPress DB root password: " MYSQL_ROOT_PASSWORD
+    echo
+fi
+if [[ -z "$WORDPRESS_DB_PASSWORD" ]]; then
+    read -s -p "Enter WordPress DB user password: " WORDPRESS_DB_PASSWORD
+    echo
+fi
 
 # Ensure all ERPNext and Traefik scripts are executable
 chmod +x erpnext/*.sh
@@ -160,7 +222,7 @@ bash deploy_traefik.sh --lan="$IS_LAN" \
 cd ..
 
 # Start Portainer, WordPress, and Resume containers
-for dir in ./portainer ./wordpress ./resume-gbacso; do
+for dir in ./portainer ./resume-gbacso; do
     # Check for docker-compose file in each directory
     if [ -f "$dir/docker-compose.yml" ] || [ -f "$dir/docker-compose.yaml" ]; then
         echo "Starting services in $dir..."
@@ -169,6 +231,13 @@ for dir in ./portainer ./wordpress ./resume-gbacso; do
         echo "No docker-compose file found in $dir, skipping."
     fi
 done
+
+# Start WordPress with the specified configuration
+cd ./wordpress
+docker-compose up -d \
+    --build \
+    --env MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" \
+    --env WORDPRESS_DB_PASSWORD="$WORDPRESS_DB_PASSWORD"
 
 # Start ERPNext stack with the specified configuration
 cd ./erpnext

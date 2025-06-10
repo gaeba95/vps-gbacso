@@ -50,29 +50,66 @@ All services are orchestrated via Docker Compose, with easy configuration and de
 
 ### Start All Services
 
-Run the main script with your desired options:
+You can start the entire stack using the main script with your desired options as command-line arguments. If any required argument is omitted, the script will prompt you interactively.
 
 ```sh
 cd docker
-./start_containers.sh --mariadb-password <mariadb_root_pw> \
-                      --frappe-password <frappe_admin_pw> \
-                      --letsencrypt-email <your_email> \
-                      --sites site1.com,site2.com \
-                      --docker-account <dockerhub_user> \
-                      --image-name <erpnext_image> \
-                      --image-tag <tag> \
-                      [--lan]
+./start_containers.sh [OPTIONS]
 ```
 
-**Example:**
+**Key Options:**
+
+- `--mariadb-password <password>`: Set MariaDB root password (ERPNext)
+- `--frappe-password <password>`: Set Frappe admin password (ERPNext)
+- `--letsencrypt-email <email>`: Email for Let's Encrypt SSL
+- `--sites <sites>`: Comma-separated list of ERPNext sites to create
+- `--docker-account <account>`: Docker Hub account for ERPNext images
+- `--image-name <name>`: ERPNext Docker image name
+- `--image-tag <tag>`: ERPNext Docker image tag
+- `--lan`: Enable LAN mode (uses LAN-specific compose file)
+- `--traefik-domain <domain>`: Traefik main domain
+- `--traefik-wildcard-domain <domain>`: Traefik wildcard domain
+- `--traefik-email <email>`: Traefik notification email
+- `--traefik-hashed-password <password>`: Hashed password for Traefik dashboard
+- `--cf-dns-api-token <token>`: Cloudflare DNS API token (for DNS challenge)
+- `--wp-db-root-password <password>`: WordPress DB root password
+- `--wp-db-password <password>`: WordPress DB user password
+
+Run `./start_containers.sh --help` for the full list of options.
+
+---
+
+## Examples
+
+**Start all services with all options provided:**
 
 ```sh
-./start_containers.sh --mariadb-password mypass --frappe-password adminpass \
-  --letsencrypt-email user@example.com --sites site.example.com \
-  --docker-account yourdockeraccount --image-name customappfrappe --image-tag latest
+cd docker
+./start_containers.sh \
+  --mariadb-password mypass \
+  --frappe-password adminpass \
+  --letsencrypt-email user@example.com \
+  --sites site1.com,site2.com \
+  --docker-account yourdockeraccount \
+  --image-name customappfrappe \
+  --image-tag latest \
+  --traefik-domain example.com \
+  --traefik-wildcard-domain '*.example.com' \
+  --traefik-email admin@example.com \
+  --traefik-hashed-password 'user:$apr1$...' \
+  --cf-dns-api-token xxxxxxxx \
+  --wp-db-root-password wp_root_pass \
+  --wp-db-password wp_user_pass
 ```
 
-### Build Custom ERPNext Image
+**Start all services and provide missing options interactively:**
+
+```sh
+cd docker
+./start_containers.sh
+```
+
+**Build a custom ERPNext Docker image:**
 
 ```sh
 cd docker/erpnext
@@ -87,33 +124,36 @@ cd docker/erpnext
 vps-gbacso/
 ├── .gitignore
 ├── .gitmodules
+├── .github/
+│   └── workflows/
+│       └── docker-image.yml
 ├── README.md
 ├── install_server.sh
 └── docker/
-    ├── start_containers.sh
-    ├── erpnext/
-    │   ├── builds_apps_docker_image.sh
-    │   ├── create_dockercompose_frappe.sh
-    │   ├── deploy_erpnext.sh
-    │   ├── set_frappe_docker_repo_arm64.sh
-    │   ├── compose/
-    │   │   ├── compose.yaml
-    │   │   └── compose_arm64.yaml
-    │   ├── env/
-    │   │   ├── erpnext-one.env
-    │   │   └── mariadb.env
-    │   └── frappe_docker/   # (git submodule)
-    ├── portainer/
-    │   └── docker-compose.yml
-    ├── resume-gbacso/
-    │   └── docker-compose.yml
-    ├── traefik/
-    │   ├── compose.traefik-ssl.yaml
-    │   ├── compose.traefik.yaml
-    │   ├── deploy_traefik.sh
-    │   └── traefik.env
-    └── wordpress/
-        └── docker-compose.yml
+  ├── start_containers.sh
+  ├── erpnext/
+  │   ├── builds_apps_docker_image.sh
+  │   ├── create_dockercompose_frappe.sh
+  │   ├── deploy_erpnext.sh
+  │   ├── set_frappe_docker_repo_arm64.sh
+  │   ├── compose/
+  │   │   ├── compose.yaml
+  │   │   └── compose_arm64.yaml
+  │   ├── env/
+  │   │   ├── erpnext-one.env
+  │   │   └── mariadb.env
+  │   └── frappe_docker/
+  ├── portainer/
+  │   └── docker-compose.yml
+  ├── resume-gbacso/
+  │   └── docker-compose.yml
+  ├── traefik/
+  │   ├── compose.traefik.yaml
+  │   ├── compose.traefik-ssl.yaml
+  │   ├── deploy_traefik.sh
+  │   └── traefik.env
+  └── wordpress/
+    └── docker-compose.yml
 ```
 
 ---
@@ -122,50 +162,34 @@ vps-gbacso/
 
 ### Root
 
-- **.gitignore**: Ignores OS and editor-specific files.
-- **.gitmodules**: Declares the `frappe_docker` submodule for ERPNext.
-- **README.md**: This documentation.
-- **install_server.sh**: Installs Docker Engine, CLI, and dependencies on Ubuntu.
+- **.gitignore**: Specifies files and directories to be ignored by git.
+- **.gitmodules**: Lists git submodules, including the ERPNext Docker setup.
+- **README.md**: Project documentation and usage instructions.
+- **install_server.sh**: Automated script to install Docker, Docker Compose, and dependencies on Ubuntu.
+
+### .github/workflows/
+
+- **docker-image.yml**: GitHub Actions workflow for building Docker images.
 
 ### docker/
 
-- **start_containers.sh**: Main script to start all services (Traefik, Portainer, WordPress, Resume, ERPNext). Handles argument parsing and orchestration.
-- **erpnext/**: ERPNext deployment scripts and configuration.
-  - **builds_apps_docker_image.sh**: Builds and pushes a custom ERPNext Docker image with selected apps.
-  - **create_dockercompose_frappe.sh**: Generates Docker Compose files for ERPNext based on environment and arguments.
-  - **deploy_erpnext.sh**: Deploys ERPNext stack, creates sites, installs apps.
-  - **set_frappe_docker_repo_arm64.sh**: Builds ERPNext Docker images for ARM64.
-  - **compose/**: Docker Compose files for ERPNext (x86 and ARM64).
-  - **env/**: Environment variable files for ERPNext and MariaDB.
-  - **frappe_docker/**: [frappe/frappe_docker](https://github.com/frappe/frappe_docker) submodule for official ERPNext Docker setup.
-- **portainer/**: Docker Compose file for Portainer UI.
-- **resume-gbacso/**: Docker Compose file for your resume static site.
-- **traefik/**: Traefik reverse proxy configuration.
-  - **compose.traefik.yaml**: Base Traefik Compose file.
+- **start_containers.sh**: Orchestrates the startup of all stack services with configurable options.
+- **erpnext/**: ERPNext deployment and configuration scripts.
+  - **builds_apps_docker_image.sh**: Builds and optionally pushes a custom ERPNext Docker image.
+  - **create_dockercompose_frappe.sh**: Generates ERPNext Docker Compose files based on environment and arguments.
+  - **deploy_erpnext.sh**: Deploys ERPNext, manages site creation, and app installation.
+  - **set_frappe_docker_repo_arm64.sh**: Prepares ERPNext Docker images for ARM64 architecture.
+  - **compose/**: Contains Docker Compose files for ERPNext (x86 and ARM64).
+  - **env/**: Environment variable files for ERPNext and MariaDB services.
+  - **frappe_docker/**: Submodule with the official ERPNext Docker setup.
+- **portainer/**: Contains the Docker Compose file for deploying Portainer UI.
+- **resume-gbacso/**: Docker Compose file for deploying the static resume site.
+- **traefik/**: Traefik reverse proxy configuration and deployment scripts.
+  - **compose.traefik.yaml**: Base configuration for Traefik.
   - **compose.traefik-ssl.yaml**: SSL/Let's Encrypt configuration for Traefik.
-  - **deploy_traefik.sh**: Script to deploy Traefik with or without LAN mode.
+  - **deploy_traefik.sh**: Script to deploy Traefik with optional LAN mode.
   - **traefik.env**: Environment variables for Traefik (domains, email, credentials).
-- **wordpress/**: Docker Compose file for WordPress.
-
----
-
-## Examples
-
-**Start all services with interactive prompts:**
-
-```sh
-cd docker
-./start_containers.sh
-```
-
-**Deploy only ERPNext (after building image):**
-
-```sh
-cd docker/erpnext
-./deploy_erpnext.sh --mariadb-password mypass --frappe-password adminpass --letsencrypt-email user@example.com --sites site.example.com
-```
-
----
+- **wordpress/**: Docker Compose file for deploying WordPress.
 
 ## Notes
 

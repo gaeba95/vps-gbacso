@@ -1,4 +1,3 @@
-
 name: wordpress
 services:
   wordpress:
@@ -6,7 +5,7 @@ services:
     environment:
       - WORDPRESS_DB_HOST=mysql
       - WORDPRESS_DB_USER=wpuser
-      - WORDPRESS_DB_PASSWORD=-xxxxxxxx
+      - WORDPRESS_DB_PASSWORD=${WORDPRESS_DB_PASSWORD}
       - WORDPRESS_DB_NAME=wpdb
     depends_on:
       - mysql
@@ -29,10 +28,10 @@ services:
   mysql:
     image: mariadb:10.11
     environment:
-      - MYSQL_ROOT_PASSWORD=xxxxxxxx
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - MYSQL_DATABASE=wpdb
       - MYSQL_USER=wpuser
-      - MYSQL_PASSWORD=-xxxxxxxx
+      - MYSQL_PASSWORD=${WORDPRESS_DB_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
