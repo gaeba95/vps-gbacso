@@ -29,7 +29,12 @@ jobs:
               run: |
                 APPS_JSON_BASE64=$(cat docker/erpnext/apps.json | base64 -w 0)
                 echo "base64=$APPS_JSON_BASE64" >> $GITHUB_OUTPUT
-                
+
+            - name: Set up metadata
+              id: meta
+              run: |
+                echo "SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+ 
             - name: Log in to Docker Hub
               uses: docker/login-action@v3
               with:
@@ -48,14 +53,10 @@ jobs:
                     FRAPPE_BRANCH=version-15
                     APPS_JSON_BASE64=${{ steps.encode-apps-json.outputs.base64 }}
                 tags: |
-                    ${{ secrets.DOCKER_USERNAME }}/f${{ secrets.DOCKER_REPO }}:latest
+                    ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }}:latest
                     ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }}:${{ steps.meta.outputs.SHORT_SHA }}
                 cache-from: type=local,src=/tmp/.buildx-cache
                 cache-to: type=local,dest=/tmp/.buildx-cache,mode=max
-
-            - name: output image digest
-              id: meta
-              run: echo "SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
 
             - name: Notify on success or failure
               if: always()
