@@ -24,3 +24,5 @@ traefik/traefik.env
 
 # ggshield secrets scan cache
 .ggshield/
+# ggshield cache directory
+.cache_ggshield
